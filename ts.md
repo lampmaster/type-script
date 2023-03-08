@@ -349,6 +349,110 @@ type Bar = Foo & {
 
 #### Модификаторы области видимости
 
-protected свойство - доступно для дочерних классов, но не доступно снаружи
-private - лучше не использовать, в js приватные свойства и методы пишутся #something. Также private создает коллизии
-static - доступно снаружи, но 
+**protected** - доступно для дочерних классов, но не доступно снаружи
+
+**private** - лучше не использовать, в js приватные свойства и методы пишутся #something. Также private создает коллизии
+
+#### Реализация интерфейсов
+
+Класс может имплементирвать сколько угодно интерфейсов
+
+```ts
+interface Server {
+    post(body: any): void
+    get(): void  
+}
+
+interface Server2 {
+    delete(): boolean 
+}
+
+class MyServer implements Server, Server2 {
+    post(body: any): void {
+        
+    }
+
+    get(): void {
+        
+    }
+
+    delete(): boolean {
+        return true
+    }
+}
+```
+
+Также класс можно использовать, как интерфейс
+
+> P.S. следует отметить, что в интерфейсе не может быть protected и private свойств, поэтому при использовании класса, как интерфейса, такие свойства будут проигнорированы
+
+#### Абстрактные классы
+
+Абстрактный класс может иметь, как реализованные методы,  так и абстрактные методы и свойства, которые нужно реализовать в конкретных классах
+
+```ts
+abstract class Server {
+    abstract post(body: any): void
+    
+    delete(): boolean {
+        // ...
+    } 
+}
+```
+
+#### Строгоинициализированные свойства
+
+Могут быть ситуации, когда дефолтная реализация для свойства задается в конструкторе и ts не всегда может это проанализировать
+
+```ts
+class Foo {
+    a: string // ts будет ругаться, что свойство не проинициализровано(хотя это не так)
+    a!: string   // можно добавить Non-null assertion operator, чтоб сказать ts, когда мы точно уверены, что свойство не null или undefined
+
+    constructor(a: string) {
+        this.initA(a)
+    }
+
+    initA(a: string) {
+        this.a = a
+    }
+}
+```
+
+#### this полиморфизм
+
+```ts
+class Foo {
+    bar(): Foo {
+        return this
+    }
+}
+
+class Foo2 extends Foo {
+    bar2(): Foo2 {
+        return this
+    }
+}
+
+// ts напишет, что bar2 doesn't exist, так как мы прописали, что возвращаемый тип у bar(): Foo
+new Foo().bar().bar2().bar()
+```
+
+Можно поставить this вместо конкретного типа
+
+```ts
+class Foo {
+    bar(): this {
+        return this
+    }
+}
+
+class Foo2 extends Foo {
+    bar2(): this {
+        return this
+    }
+}
+
+// Теперь ts не будет "ругаться"
+new Foo().bar().bar2().bar()
+```
