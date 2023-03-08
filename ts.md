@@ -456,3 +456,193 @@ class Foo2 extends Foo {
 // Теперь ts не будет "ругаться"
 new Foo().bar().bar2().bar()
 ```
+
+#### Ассоциативные типы
+
+В typescript нет ассоциативных типов, но с помощью this полиморфизма можно добиться похожего поведения
+
+```ts
+class FormWidget {
+    readonly Value!: unknown
+
+    protected value!: this['Value'] 
+
+    getValue(): this['Value'] {
+        return this.value
+    }
+}
+
+class InputWidget extends FormWidget {
+    override readonly Value!: string // переписали Value с новым типом, теперь все остальные свойства и методы автоматически поменяли тип на string
+}
+
+new InputWidget().getValue().trim() // ts понял, что getValue() вернет строку, а не unknown
+```
+
+#### readonly свойства
+
+readonly свойство нельзя можно изменять в конструкторе
+
+```ts
+class Foo {
+    readonly prop: string
+
+    constructor() {
+        this.prop = 'some string'
+    }
+}
+```
+
+Нужно помнить, что readonly делает проверку только на уровне статического анализа. В исходящем js файле свойство readonly просто убирается(свойство не замораживается - freez)
+
+Также в ts есть следующие типы для структур только на чтение
+
+- ReadonlyArray
+- ReadonlyMap
+- ReadonlySet
+
+#### Кортежи
+
+> Кортеж - массив фиксированной длины, каждому элементу которого можно задать тип.
+
+```ts
+const arr: [string, number, boolean] = ['', 1, true]
+```
+
+Также в кортеже можно использовать rest оператор "..."
+
+```ts
+const arr: [string, ...number] = ['', 1, 1, 1 ... и тд ]
+
+// кортеж заканчивается и начинается строковым элементом
+const arr2: [string, ...number, string] = ['', 1, 1, 1, '']
+
+// несколько кортежей делать нельзя
+const arr3: [string, ...number, ...string]
+```
+
+#### Оператор in keyof typeof
+
+```ts
+type A = {
+    [key in 'a' | 'b']: number
+}
+
+const a: A = {
+    a: 1,
+    b: 2
+}
+```
+
+```ts
+interface Obj {
+    a: string
+    b: number
+    c: boolean
+}
+
+type A = {
+    [K in keyof Obj]: Obj[K]
+}
+
+const a: A = {
+    a: '',
+    b: 2,
+    c: true
+}
+```
+
+```ts
+const obj = {
+    a: '',
+    b: 2,
+    c: true,
+}
+
+type A = {
+    [K in keyof typeof obj]: typeof obj[K]
+}
+
+const a: A = {
+    a: '',
+    b: 2,
+    c: true
+}
+```
+
+#### Оператор readonly с индексным типом
+
+Делаем все поля readonly
+
+ ```ts
+interface Obj {
+    a: string,
+    b: number,
+    c: boolean,
+}
+
+type ReadonlyObj = {
+    readonly [K in keyof Obj]: Obj[K]
+}
+```
+
+Обратная ситуация.
+
+ ```ts
+interface Obj {
+    readonly a: string,
+    readonly b: number,
+    readonly c: boolean,
+}
+
+// так как мы берем значения из интерфейса по ключу, то readonly свойство тоже будет наследоваться
+// что это убрать нужно добавить "-"
+type ReadonlyObj = {
+    -readonly [K in keyof Obj]: Obj[K]
+}
+```
+
+#### Параметрические типы и обобщенные функции(generic)
+
+ ```ts
+function fn<T>(value: T): T {
+    return value
+}
+
+// ts сам вычисляет, какой тип будет на выходе
+fn(1).toFixed()
+fn('').trim()
+```
+
+также можно задать значение параметрического типа по умолчанию
+
+ ```ts
+function fn<T = number>(value: string): T {
+    // ...
+    return value
+}
+
+fn('').toFixed()
+```
+
+Можно также указать, что тип должен принадлежать какому-то подтипу
+
+ ```ts
+function fn<T extends Array<any>>(value: string): T {
+    // ...
+    return value
+}
+
+fn<number[]>('')
+```
+
+#### Выведение параметрических типов
+
+ ```ts
+function map<
+    A extends [],
+    F extends (el: A extends Array<infer V> ? V : unknown) => any
+>(arr: A, fn: F): F extends (...args: any[]) => infer R ? R[] : unknown {
+    return <any>arr.map(fn)
+}
+```
