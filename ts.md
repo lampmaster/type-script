@@ -65,7 +65,6 @@ const enum Error {
 console.log(Error[404]) // теперь так делать нельзя 
 ```
 
-
 #### Декораторы
 
 ```ts
@@ -88,6 +87,14 @@ function depricated(target, key, desc) {
     }
 }
 ```
+
+В TS есть следующие типы декораторов:
+
+- Декоратор свойства класса
+- Метода
+- Классов
+- Деоратор аргумента метода
+
 
 ### Размеченное объединение типов
 
@@ -728,3 +735,25 @@ type A = NonNullable<string | null | undefined> // A имеет тип string
 ### Файлы d.ts
 
 Позволяет описывать типы для различных функций/методов и тд в подключаемых библиотеках
+
+
+### Пространство имен namespace
+
+В namespace можно объеденить множество типов
+
+```ts
+namespace Group {
+    export type Dictionary<T extends Record<any, any>> =
+        T extends Record<any, infer V> ? V : unknown
+}
+
+namespace Group {
+    export type Dictionary2<T extends Record<any, any>> =
+        T extends Record<any, infer V> ? V : unknown
+}
+
+let a: Group.Dictionary<Record<any, number>>
+let b: Group.Dictionary2<Record<any, string>>
+```
+
+Как и interface, namespace с одинаковым именем мерджатся
